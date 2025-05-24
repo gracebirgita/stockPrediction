@@ -34,7 +34,11 @@ def main():
     st.write(""
              "")
 
-    stocks=("BBCA.JK")
+    stocks=("BBCA.JK", "BBRI.JK", "BMRI.JK")
+
+    selected_stock = st.selectbox("\nSelect dataset for prediction", stocks)
+
+
     # st.markdown(
     #     '<h3 style="color: gold;">How many days before you want to see for comparison?</h3><br></br>',
     #     unsafe_allow_html=True,
@@ -44,30 +48,34 @@ def main():
     # n_years = st.slider("Day of prediction:", 1, 4)
     # n_years = st.slider("Day of prediction:", 1, 4, key="temp_slider")
     n_years=3
-    # period = n_years *365
 
-    # @st.cache_data
-    # def load_data(ticker):
-    #     data = yf.download(ticker, START, TODAY)
-    #     data.reset_index(inplace=True)
-    #     return data
     def load_data():
-        data = pd.read_csv("BBCA_data.csv")
+        filename = selected_stock.replace('.', '_') + '.csv'
+        data = pd.read_csv(filename)
         data['Date'] = pd.to_datetime(data['Date'])
         return data
     
     # data_load_state = st.text("Load data...")
     data = load_data()
-    # data_load_state.text("Loading data...done!")
 
-    # Debug: Periksa kolom data
-    # st.write("Data columns:", data.columns)
 
     # Periksa apakah data memiliki MultiIndex
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = [col[0] for col in data.columns]
         
-    st.subheader("Stock data")
+    # st.subheader("Stock data")
+    
+    st.write(""
+             "")
+    st.write(""
+             "")
+    st.markdown(
+        '<h3 style="color: gold;">Stock Data</h3>',
+        unsafe_allow_html=True,
+    )
+    # st.write("last 30 days")
+    st.write("")
+
     st.write(data.tail(30))
 
     def plot_raw_data():
@@ -81,28 +89,17 @@ def main():
 
     plot_raw_data()
 
-    # st.line_chart(data[['Date', 'Close']].set_index('Date'))
-
-
-
     # Siapkan data untuk Prophet
     df_train = data[['Date', 'Close']].rename(columns={"Date": "ds", "Close": "y"})
     df_train['ds'] = pd.to_datetime(df_train['ds'])
     df_train['y'] = pd.to_numeric(df_train['y'], errors='coerce')
     df_train = df_train.dropna(subset=['y'])
 
-    # m = Prophet()
-    # m.fit(df_train)
-
     #LOAD MODEL
     model = load_model("model_lstm.h5")
 
     #ngubah data menjadi windowed df
     data = data[["Date", "Close"]]
-    # def str_to_datetime(s):
-    #     split = s.split('-')
-    #     year, month, day = int(split[0]), int(split[1]), int(split[2])
-    #     return datetime.datetime(year=year, month=month, day=day)
 
     #ngubah data menjadi windowed df
     def df_to_windowed_df(dataframe, first_date_str, last_date_str, n_years):
