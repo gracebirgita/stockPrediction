@@ -325,7 +325,7 @@ def main():
             mode='markers+text',
             marker=dict(color='green', size=10),
             name='Max Value',
-            text=[f"Min: {max(test_res):.2f}"],
+            text=[f"Max: {max(test_res):.2f}"],
             textposition="top center"
         ))
 
