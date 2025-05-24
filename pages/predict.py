@@ -35,13 +35,14 @@ def main():
              "")
 
     stocks=("BBCA.JK")
-    st.markdown(
-        '<h3 style="color: gold;">How many days before you want to see for comparison?</h3><br></br>',
-        unsafe_allow_html=True,
-    )
+    # st.markdown(
+    #     '<h3 style="color: gold;">How many days before you want to see for comparison?</h3><br></br>',
+    #     unsafe_allow_html=True,
+    # )
     # selected_stock = st.selectbox("\nSelect dataset for prediction", stocks)
 
     # n_years = st.slider("Day of prediction:", 1, 4)
+    # n_years = st.slider("Day of prediction:", 1, 4, key="temp_slider")
     n_years=3
     # period = n_years *365
 
@@ -66,7 +67,7 @@ def main():
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = [col[0] for col in data.columns]
         
-    st.subheader("Raw data")
+    st.subheader("Stock data")
     st.write(data.tail(30))
 
     def plot_raw_data():
@@ -229,23 +230,12 @@ def main():
     ##
     test_predictions = model.predict(X_test).flatten()
 
-    ##
-    recursive_predictions = []
-    recursive_dates = np.concatenate([dates_val, dates_test])
-
-    for target_date in recursive_dates:
-        last_window = deepcopy(X_train[-1])
-        next_prediction = model.predict(np.array([last_window])).flatten()
-        recursive_predictions.append(next_prediction)
-        last_window[-1] = next_prediction
-
     #PREDICT
     train_predictions = model.predict(X_train).flatten()
 
     def plot_predictions(dates_train, train_predictions, y_train,
                         dates_val, val_predictions, y_val,
-                        dates_test, test_predictions, y_test,
-                        recursive_dates, recursive_predictions):
+                        dates_test, test_predictions, y_test): #menghapus recursive_date, recursive_prediction
         # figur baru
         fig = go.Figure()
 
@@ -261,9 +251,7 @@ def main():
         fig.add_trace(go.Scatter(x=dates_test, y=test_predictions, mode='lines', name='Testing Predictions', line=dict(color='red')))
         fig.add_trace(go.Scatter(x=dates_test, y=y_test, mode='lines', name='Testing Observations', line=dict(color='pink')))
 
-        # garis Recursive Predictions
-        fig.add_trace(go.Scatter(x=recursive_dates, y=recursive_predictions, mode='lines', name='Recursive Predictions', line=dict(color='green')))
-
+       
         # layout dengan range slider
         fig.update_layout(
             title_text="Train, Validation, Test Predictions",
@@ -290,9 +278,7 @@ def main():
 
     plot_predictions(dates_train, train_predictions, y_train,
                         dates_val, val_predictions, y_val,
-                        dates_test, test_predictions, y_test,
-                        recursive_dates, recursive_predictions)
-    
+                        dates_test, test_predictions, y_test)
 
     def plot_future_predictions(day_pred, test_res):
         fig = go.Figure()
@@ -344,16 +330,19 @@ def main():
         unsafe_allow_html=True,
     )
 
-    day = st.number_input("How many days do you want to predict?", min_value=1, max_value=100)
+    st.number_input("How many days do you want to predict?", min_value=1, max_value=100, key="temp_day")
 
     if st.button("Prediksi ke Depan"):
+        st.session_state["day"] = st.session_state["temp_day"]
+
+    if "day" in st.session_state:
         X_last = X[-1]
         X_last = X_last.reshape(1, X_last.shape[0], X_last.shape[1])
         test_res = []
         curr_date = pd.to_datetime(dates[-1])
         day_pred = []
 
-        for i in range(day):
+        for i in range(st.session_state["day"]):
             test_predictions = model.predict(X_last).flatten()
             X_last = np.roll(X_last, -1, axis=1)
             X_last[0, -1, 0] = test_predictions[0]
