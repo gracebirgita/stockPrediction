@@ -41,6 +41,41 @@ def dashboard():
     #     switch_page("predict")
         # navigate_to("explore")
     # Halaman Welcome
+    st.markdown(
+        '<h3 style="color: gold;">Stock</h3><br></br>',
+        unsafe_allow_html=True,
+    )
+    st.write("")
+
+    st.markdown(
+        """
+        <div style="display: flex; gap: 40px; justify-content: center;">
+            <div style="background: rgba(255,255,255,0.5); padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <img src="https://mainsaham.id/wp-content/uploads/2023/02/img-BBCA.png" width="100">
+            </div>
+            <div style="background: rgba(255,255,255,0.5); padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/BRI_2020.svg/2560px-BRI_2020.svg.png" width="100">
+            </div>
+            <div style="background: rgba(255,255,255,0.5); padding: 12px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08);">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/2560px-Bank_Mandiri_logo_2016.svg.png" width="100">
+            </div>
+        </div>
+        <br></br>
+        """,
+        unsafe_allow_html=True
+    )
+    # logo_urls = [
+    #     "https://mainsaham.id/wp-content/uploads/2023/02/img-BBCA.png",
+    #     "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2e/BRI_2020.svg/2560px-BRI_2020.svg.png",
+    #     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Bank_Mandiri_logo_2016.svg/2560px-Bank_Mandiri_logo_2016.svg.png",
+    # ]
+    # cols = st.columns(3)
+    # for col, url in zip(cols, logo_urls):
+    #     col.image(url, width=100)
+
+    st.write("")
+    st.write("")
+
 
     st.markdown(
         '<h3 style="color: gold;">Benefit</h3><br></br>',

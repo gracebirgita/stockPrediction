@@ -34,39 +34,38 @@ def main():
     st.write(""
              "")
 
-    stocks=("BBCA.JK")
-    st.markdown(
-        '<h3 style="color: gold;">How many days before you want to see for comparison?</h3><br></br>',
-        unsafe_allow_html=True,
-    )
-    # selected_stock = st.selectbox("\nSelect dataset for prediction", stocks)
+    stocks=("BBCA.JK", "BBRI.JK", "BMRI.JK")
 
-    # n_years = st.slider("Day of prediction:", 1, 4)
+    selected_stock = st.selectbox("\nSelect dataset for prediction", stocks)
+
     n_years=3
-    # period = n_years *365
 
-    # @st.cache_data
-    # def load_data(ticker):
-    #     data = yf.download(ticker, START, TODAY)
-    #     data.reset_index(inplace=True)
-    #     return data
     def load_data():
-        data = pd.read_csv("BBCA_data.csv")
+        filename = selected_stock.replace('.', '_') + '.csv'
+        data = pd.read_csv(filename)
         data['Date'] = pd.to_datetime(data['Date'])
         return data
     
     # data_load_state = st.text("Load data...")
     data = load_data()
-    # data_load_state.text("Loading data...done!")
 
-    # Debug: Periksa kolom data
-    # st.write("Data columns:", data.columns)
 
     # Periksa apakah data memiliki MultiIndex
     if isinstance(data.columns, pd.MultiIndex):
         data.columns = [col[0] for col in data.columns]
         
-    st.subheader("Raw data")
+    # st.subheader("Stock data")
+    
+    st.write(""
+             "")
+    st.write(""
+             "")
+    st.markdown(
+        '<h3 style="color: gold;">Stock Data</h3>',
+        unsafe_allow_html=True,
+    )
+    # st.write("last 30 days")
+    st.write("")
     st.write(data.tail(30))
 
     def plot_raw_data():
@@ -80,28 +79,17 @@ def main():
 
     plot_raw_data()
 
-    # st.line_chart(data[['Date', 'Close']].set_index('Date'))
-
-
-
     # Siapkan data untuk Prophet
     df_train = data[['Date', 'Close']].rename(columns={"Date": "ds", "Close": "y"})
     df_train['ds'] = pd.to_datetime(df_train['ds'])
     df_train['y'] = pd.to_numeric(df_train['y'], errors='coerce')
     df_train = df_train.dropna(subset=['y'])
 
-    # m = Prophet()
-    # m.fit(df_train)
-
     #LOAD MODEL
     model = load_model("model_lstm.h5")
 
     #ngubah data menjadi windowed df
     data = data[["Date", "Close"]]
-    # def str_to_datetime(s):
-    #     split = s.split('-')
-    #     year, month, day = int(split[0]), int(split[1]), int(split[2])
-    #     return datetime.datetime(year=year, month=month, day=day)
 
     #ngubah data menjadi windowed df
     def df_to_windowed_df(dataframe, first_date_str, last_date_str, n_years):
@@ -229,23 +217,12 @@ def main():
     ##
     test_predictions = model.predict(X_test).flatten()
 
-    ##
-    recursive_predictions = []
-    recursive_dates = np.concatenate([dates_val, dates_test])
-
-    for target_date in recursive_dates:
-        last_window = deepcopy(X_train[-1])
-        next_prediction = model.predict(np.array([last_window])).flatten()
-        recursive_predictions.append(next_prediction)
-        last_window[-1] = next_prediction
-
     #PREDICT
     train_predictions = model.predict(X_train).flatten()
 
     def plot_predictions(dates_train, train_predictions, y_train,
                         dates_val, val_predictions, y_val,
-                        dates_test, test_predictions, y_test,
-                        recursive_dates, recursive_predictions):
+                        dates_test, test_predictions, y_test): #menghapus recursive_date, recursive_prediction
         # figur baru
         fig = go.Figure()
 
@@ -261,9 +238,7 @@ def main():
         fig.add_trace(go.Scatter(x=dates_test, y=test_predictions, mode='lines', name='Testing Predictions', line=dict(color='red')))
         fig.add_trace(go.Scatter(x=dates_test, y=y_test, mode='lines', name='Testing Observations', line=dict(color='pink')))
 
-        # garis Recursive Predictions
-        fig.add_trace(go.Scatter(x=recursive_dates, y=recursive_predictions, mode='lines', name='Recursive Predictions', line=dict(color='green')))
-
+       
         # layout dengan range slider
         fig.update_layout(
             title_text="Train, Validation, Test Predictions",
@@ -290,9 +265,7 @@ def main():
 
     plot_predictions(dates_train, train_predictions, y_train,
                         dates_val, val_predictions, y_val,
-                        dates_test, test_predictions, y_test,
-                        recursive_dates, recursive_predictions)
-    
+                        dates_test, test_predictions, y_test)
 
     def plot_future_predictions(day_pred, test_res):
         fig = go.Figure()
@@ -325,7 +298,7 @@ def main():
             mode='markers+text',
             marker=dict(color='green', size=10),
             name='Max Value',
-            text=[f"Min: {max(test_res):.2f}"],
+            text=[f"Max: {max(test_res):.2f}"],
             textposition="top center"
         ))
 
@@ -344,16 +317,19 @@ def main():
         unsafe_allow_html=True,
     )
 
-    day = st.number_input("How many days do you want to predict?", min_value=1, max_value=100)
+    st.number_input("How many days do you want to predict?", min_value=1, max_value=100, key="temp_day")
 
     if st.button("Prediksi ke Depan"):
+        st.session_state["day"] = st.session_state["temp_day"]
+
+    if "day" in st.session_state:
         X_last = X[-1]
         X_last = X_last.reshape(1, X_last.shape[0], X_last.shape[1])
         test_res = []
         curr_date = pd.to_datetime(dates[-1])
         day_pred = []
 
-        for i in range(day):
+        for i in range(st.session_state["day"]):
             test_predictions = model.predict(X_last).flatten()
             X_last = np.roll(X_last, -1, axis=1)
             X_last[0, -1, 0] = test_predictions[0]
