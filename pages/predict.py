@@ -38,6 +38,15 @@ def main():
 
     selected_stock = st.selectbox("\nSelect dataset for prediction", stocks)
 
+
+    # st.markdown(
+    #     '<h3 style="color: gold;">How many days before you want to see for comparison?</h3><br></br>',
+    #     unsafe_allow_html=True,
+    # )
+    # selected_stock = st.selectbox("\nSelect dataset for prediction", stocks)
+
+    # n_years = st.slider("Day of prediction:", 1, 4)
+    # n_years = st.slider("Day of prediction:", 1, 4, key="temp_slider")
     n_years=3
 
     def load_data():
@@ -66,6 +75,7 @@ def main():
     )
     # st.write("last 30 days")
     st.write("")
+
     st.write(data.tail(30))
 
     def plot_raw_data():
