@@ -11,15 +11,17 @@ import yfinance as yf
 from prophet import Prophet
 from prophet.plot import plot_plotly
 from plotly import graph_objs as go
+from sklearn.preprocessing import MinMaxScaler
 
 from copy import deepcopy
 
 #TRAINING MODEL 
-
 from tensorflow.keras.models import load_model
 # from tensorflow.keras.models import Sequential
 # from tensorflow.keras.optimizers import Adam
 # from tensorflow.keras import layers
+
+# st.write("Current working directory:", os.getcwd())
 
 START = '2004-06-08'
 TODAY = date.today().strftime("%Y-%m-%d")
@@ -48,7 +50,7 @@ def main():
     
     # data_load_state = st.text("Load data...")
     data = load_data()
-
+    # scaler.fit(data[['Close']].values)
 
     # Periksa apakah data memiliki MultiIndex
     if isinstance(data.columns, pd.MultiIndex):
@@ -86,7 +88,7 @@ def main():
     df_train = df_train.dropna(subset=['y'])
 
     #LOAD MODEL
-    model = load_model("model_lstm.h5")
+    model = load_model("model_lstm_v3.h5")
 
     #ngubah data menjadi windowed df
     data = data[["Date", "Close"]]
@@ -167,7 +169,8 @@ def main():
     # print(data)
     data.index = data.pop('Date')
     start = '2004-07-12'
-    end = '2025-02-07'
+    end = datetime.date.today().strftime('%Y-%m-%d')
+
     
     # windowed_df = df_to_windowed_df(data, start , end, n_years)
     def process_data(data, start, end, n_years):
@@ -200,6 +203,21 @@ def main():
     dates, X, y = windowed_df_to_date_X_y(windowed_df)
     print(dates.shape, X.shape, y.shape)
 
+
+    # SCALLING
+    # SCALING X DAN Y DI SINI
+    samples, timesteps, features = X.shape
+
+    scaler_X = MinMaxScaler()
+    X_2D = X.reshape((samples, timesteps * features))
+    X_scaled_2D = scaler_X.fit_transform(X_2D)
+    X = X_scaled_2D.reshape((samples, timesteps, features))
+
+    scaler_y = MinMaxScaler()
+    y = y.reshape(-1, 1)
+    y = scaler_y.fit_transform(y)
+
+
     #membagi table
     q_80 = int(len(dates) * .8)
     q_90 = int(len(dates) * .9)
@@ -222,26 +240,38 @@ def main():
 
     def plot_predictions(dates_train, train_predictions, y_train,
                         dates_val, val_predictions, y_val,
-                        dates_test, test_predictions, y_test): #menghapus recursive_date, recursive_prediction
+                        dates_test, test_predictions, y_test,
+                        scaler_y): #menghapus recursive_date, recursive_prediction
+        # inverse transform hasil predict & aktual label
+            # Inverse transform hasil prediksi dan label aktual
+        train_predictions_rescaled = scaler_y.inverse_transform(train_predictions.reshape(-1, 1)).flatten()
+        y_train_rescaled = scaler_y.inverse_transform(y_train.reshape(-1, 1)).flatten()
+
+        val_predictions_rescaled = scaler_y.inverse_transform(val_predictions.reshape(-1, 1)).flatten()
+        y_val_rescaled = scaler_y.inverse_transform(y_val.reshape(-1, 1)).flatten()
+
+        test_predictions_rescaled = scaler_y.inverse_transform(test_predictions.reshape(-1, 1)).flatten()
+        y_test_rescaled = scaler_y.inverse_transform(y_test.reshape(-1, 1)).flatten()
+     
         # figur baru
         fig = go.Figure()
 
         # garis Training data
-        fig.add_trace(go.Scatter(x=dates_train, y=train_predictions, mode='lines', name='Training Predictions', line=dict(color='blue')))
-        fig.add_trace(go.Scatter(x=dates_train, y=y_train, mode='lines', name='Training Observations', line=dict(color='cyan')))
+        fig.add_trace(go.Scatter(x=dates_train, y=train_predictions_rescaled, mode='lines', name='Predictions Training', line=dict(color='blue')))
+        fig.add_trace(go.Scatter(x=dates_train, y=y_train_rescaled, mode='lines', name='Actual Training', line=dict(color='cyan')))
 
         # Validation data
-        fig.add_trace(go.Scatter(x=dates_val, y=val_predictions, mode='lines', name='Validation Predictions', line=dict(color='orange')))
-        fig.add_trace(go.Scatter(x=dates_val, y=y_val, mode='lines', name='Validation Observations', line=dict(color='gold')))
+        fig.add_trace(go.Scatter(x=dates_val, y=val_predictions_rescaled, mode='lines', name='Predictions Validation', line=dict(color='orange')))
+        fig.add_trace(go.Scatter(x=dates_val, y=y_val_rescaled, mode='lines', name='Actual Validation', line=dict(color='gold')))
 
         # garis testing
-        fig.add_trace(go.Scatter(x=dates_test, y=test_predictions, mode='lines', name='Testing Predictions', line=dict(color='red')))
-        fig.add_trace(go.Scatter(x=dates_test, y=y_test, mode='lines', name='Testing Observations', line=dict(color='pink')))
+        fig.add_trace(go.Scatter(x=dates_test, y=test_predictions_rescaled, mode='lines', name='Predictions Testing', line=dict(color='red')))
+        fig.add_trace(go.Scatter(x=dates_test, y=y_test_rescaled, mode='lines', name='Actual Testing', line=dict(color='pink')))
 
        
         # layout dengan range slider
         fig.update_layout(
-            title_text="Train, Validation, Test Predictions",
+            title_text="Train, Validation, Predictions Test",
             xaxis=dict(
                 title="Dates",
                 rangeslider=dict(visible=True),  # range slider
@@ -265,13 +295,17 @@ def main():
 
     plot_predictions(dates_train, train_predictions, y_train,
                         dates_val, val_predictions, y_val,
-                        dates_test, test_predictions, y_test)
+                        dates_test, test_predictions, y_test, 
+                        scaler_y)
 
-    def plot_future_predictions(day_pred, test_res):
+    def plot_future_predictions(day_pred, test_res, scaler_y):
+        # inverse transform 
+        test_res_real = scaler_y.inverse_transform(np.array(test_res).reshape(-1,1)).flatten()
+
         fig = go.Figure()
         fig.add_trace(go.Scatter(
             x=day_pred,
-            y=test_res,
+            y=test_res_real,
             mode='lines+markers',
             name='Future Prediction',
             marker=dict(color='gold'),
@@ -279,26 +313,28 @@ def main():
         ))
 
         # minimum warna merah
-        min_index = test_res.index(min(test_res))
+        # min_index = test_res.index(min(test_res))
+        min_index = np.argmin(test_res_real)
         fig.add_trace(go.Scatter(
             x=[day_pred[min_index]],
-            y=[test_res[min_index]],
+            y=[test_res_real[min_index]],
             mode='markers+text',
             marker=dict(color='red', size=10),
             name='Min Value',
-            text=[f"Min: {min(test_res):.2f}"],
+            text=[f"Min: {test_res_real[min_index]:.2f}"],
             textposition="top center"
         ))
 
         # max hijau
-        max_index = test_res.index(max(test_res))
+        # max_index = test_res.index(max(test_res))
+        max_index = np.argmax(test_res_real)
         fig.add_trace(go.Scatter(
             x=[day_pred[max_index]],
-            y=[test_res[max_index]],
+            y=[test_res_real[max_index]],
             mode='markers+text',
             marker=dict(color='green', size=10),
             name='Max Value',
-            text=[f"Max: {max(test_res):.2f}"],
+            text=[f"Max: {test_res_real[max_index]:.2f}"],
             textposition="top center"
         ))
 
@@ -313,20 +349,25 @@ def main():
     # st.subheader("")
     st.divider()  # Garis horizontal
     st.markdown(
-        '<h2 style="color: gold;">Future Prediction (Forecast)</h2><br></br>',
+        '<h2 style="color: gold;">Future Prediction (Forecast)</h2>',
         unsafe_allow_html=True,
     )
 
+    st.write("")
     st.number_input("How many days do you want to predict?", min_value=1, max_value=100, key="temp_day")
 
     if st.button("Prediksi ke Depan"):
         st.session_state["day"] = st.session_state["temp_day"]
+
 
     if "day" in st.session_state:
         X_last = X[-1]
         X_last = X_last.reshape(1, X_last.shape[0], X_last.shape[1])
         test_res = []
         curr_date = pd.to_datetime(dates[-1])
+
+        # st.write("Tanggal terakhir di data:", data.index[-1])
+        # st.write("Tanggal terakhir di windowed:", dates[-1])
         day_pred = []
 
         for i in range(st.session_state["day"]):
@@ -338,17 +379,65 @@ def main():
             day_pred.append(now_date)
             test_res.append(test_predictions[0])
 
-        st.markdown(
-            f"""
-            <p>Maximum prediction: <span style="color:green;">{max(test_res):.2f}</span> on {day_pred[test_res.index(max(test_res))]}</p>
-            <p>Minimum prediction: <span style="color:red;">{min(test_res):.2f}</span> on {day_pred[test_res.index(min(test_res))]}</p>
-            """,
-            unsafe_allow_html=True
-        )
+        test_res_real = scaler_y.inverse_transform(np.array(test_res).reshape(-1,1)).flatten()
+
+
+        # Ambil index max dan min
+        idx_max = np.argmax(test_res_real)
+        idx_min = np.argmin(test_res_real)
+
+        # # Buat tabel hasil
+        # result_table = pd.DataFrame({
+        #     "Predict": ["Maximum", "Minimum"],
+        #     "Price (Rp)": [f"{test_res_real[idx_max]:,.2f}", f"{test_res_real[idx_min]:,.2f}"],
+        #     "Date": [day_pred[idx_max].strftime('%Y-%m-%d'), day_pred[idx_min].strftime('%Y-%m-%d')]
+        # })
+
+        # # Tampilkan tabel dengan kolom paling kanan adalah tipe (max/min)
+        # st.markdown("#### Hasil Prediksi Maksimum & Minimum")
+        # st.table(result_table[["Predict", "Price (Rp)", "Date"]])
+
+
+        max_color = "green"
+        min_color = "red"
+
+        table_html = f"""
+        <table style="margin-left:auto; margin-right:auto;">
+            <tr>
+                <th></th>
+                <th>Price (Rp)</th>
+                <th>Date</th>
+            </tr>
+            <tr>
+                <td>Max Prediction</td>
+                <td style="color:{max_color}; font-weight:bold;">{test_res_real[idx_max]:,.2f}</td>
+                <td>{day_pred[idx_max].strftime('%d-%m-%Y')}</td>
+            </tr>
+            <tr>
+                <td>Min Prediction</td>
+                <td style="color:{min_color}; font-weight:bold;">{test_res_real[idx_min]:,.2f}</td>
+                <td>{day_pred[idx_min].strftime('%d-%m-%Y')}</td>
+            </tr>
+        </table>
+        """
+
+        st.write("")
+        st.write("")
+        st.markdown("#### Prediction Result")
+        st.markdown(table_html, unsafe_allow_html=True)
+
+
+        # st.markdown(
+        #     f"""
+        #     <p>Maximum prediction : Rp <span style="color:green; font-size:18px;">{max(test_res_real):.2f}</span>  on  <span font-size:15px;">{day_pred[np.argmax(test_res_real)].strftime('%d-%m-%Y')}</p>
+        #     <p>Minimum prediction : Rp <span style="color:red; font-size: 18px;">{min(test_res_real):.2f}</span>  on  <span font-size:15px;">{day_pred[np.argmin(test_res_real)].strftime('%d-%m-%Y')}</p>
+        #     """,
+        #     unsafe_allow_html=True
+        # )
         # st.write("Maximum prediction:", max(test_res), "on", day_pred[test_res.index(max(test_res))])
         # st.write("Minimum prediction:", min(test_res), "on", day_pred[test_res.index(min(test_res))])
 
 
-        plot_future_predictions(day_pred, test_res)
+        plot_future_predictions(day_pred, test_res, scaler_y)
 
 main()
