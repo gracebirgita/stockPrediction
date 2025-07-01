@@ -11,7 +11,7 @@ streamlit run nav.py
 
 ##
 
-Dependencies yang dibutuhkan
+### Dependencies yang dibutuhkan
 
 *   streamlit
 *   pandas
