@@ -1,6 +1,6 @@
 streamlit==1.42.0
 pandas==2.2.3
-numpy==2.0.2
+numpy==1.25.0
 matplotlib==3.10.0
 yfinance==0.2.61
 prophet==1.1.6
