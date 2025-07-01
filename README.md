@@ -1,7 +1,9 @@
 # Stock Prediction
 ###
+**Link website (deployed)**: https://stockprediction-machine-learning123.streamlit.app/
 
-## Cara Menjalankan Aplikasi Streamlit
+
+## Cara Menjalankan Aplikasi Streamlit - Local
 
 1. **Clone atau Unduh Proyek dari GitHub**
 
