@@ -34,7 +34,7 @@
 
 ##
 
-### Dependencies yang dibutuhkan
+### Dependencies
 
 *   streamlit
 *   pandas
