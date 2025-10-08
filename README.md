@@ -3,15 +3,15 @@
 **Link website (deployed)**: https://stockprediction-machine-learning123.streamlit.app/
 
 
-## Cara Menjalankan Aplikasi Streamlit - Local
+## Run Streamlit App - Local
 
 1. **Clone atau Unduh Proyek dari GitHub**
 
-   Clone repository menggunakan perintah berikut:
+   Clone repository:
     ```bash
     git clone https://github.com/gracebirgita/stockPrediction.git
     ```
- 2. **Masuk ke directory proyek**
+ 2. **Go to directory**
     ```bash
     cd stockPrediction
     ```
@@ -22,11 +22,11 @@
     venv\Scripts\activate     # Windows
     ```
 
-    Jalankan perintah berikut di terminal Anda:
+    Run command in your terminal:
     ```bash
     pip install -r requirements.txt
     ```
- 4. **Jalankan Aplikasi Streamlit**
+ 4. **Run Streamlit App**
 
     ```bash
     streamlit run nav.py
