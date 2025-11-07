@@ -2,6 +2,15 @@
 ###
 **Link website (deployed)**: https://stockprediction-machine-learning123.streamlit.app/
 
+This project applies two machine learning models : LSTM and Linear Regression to predict BBCA stock prices using historical data. Demonstrates how AI can enhance financial forecasting by capturing both linear trends and complex temporal patterns.
+
+- High-Performance LSTM Model: Achieved R² Score of 0.9982 demonstrating ability to capture complex temporal patterns in stock price data.
+- Baseline Linear Regression: Delivered R² Score of 0.9928 offering a transparent and interpretable benchmark for comparison.
+- Time-Series Forecasting: Applied advanced sequence modeling using LSTM to handle long-term dependencies and non-linear trends in financial data.
+- Model Evaluation & Error Analysis: Compared models using MAE, MSE, and R² metrics to assess precision, variance explanation, and sensitivity to outliers.
+
+## 🛠️ Tech Stack
+- Built with Python : Pandas, NumPy, Prophet, Scikit-learn, TensorFlow/Keras, and visualized insights using Matplotlib, and Plotly
 
 ## Run Streamlit App - Local
 
@@ -31,18 +40,3 @@
     ```bash
     streamlit run nav.py
     ```
-
-##
-
-### Dependencies
-
-*   streamlit
-*   pandas
-*   numpy
-*   matplotlib
-*   datetime
-*   yfinance
-*   prophet
-*   plotly
-*   sklearn
-*   tensorflow
