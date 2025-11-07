@@ -2,7 +2,7 @@
 ###
 **Link website (deployed)**: https://stockprediction-machine-learning123.streamlit.app/
 
-This project applies two machine learning models : LSTM and Linear Regression to predict BBCA stock prices using historical data. Demonstrates how AI can enhance financial forecasting by capturing both linear trends and complex temporal patterns.
+comparing machine learning models : LSTM and Linear Regression to predict BBCA stock prices using historical data. Demonstrates how AI can enhance financial forecasting by capturing both linear trends and complex temporal patterns.
 
 - High-Performance LSTM Model: Achieved R² Score of 0.9982 demonstrating ability to capture complex temporal patterns in stock price data.
 - Baseline Linear Regression: Delivered R² Score of 0.9928 offering a transparent and interpretable benchmark for comparison.
